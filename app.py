@@ -1,358 +1,579 @@
 import streamlit as st
+from pathlib import Path
+from PIL import Image
 
+# ----------------------------------------------------
+# BASIC PAGE CONFIG
+# ----------------------------------------------------
 st.set_page_config(
-    page_title="Light & Color - Mini Science Lab",
+    page_title="Virtual Science Lab - Light and Color",
     layout="wide"
 )
 
-# ---------- Helper functions ----------
+# ----------------------------------------------------
+# SIMPLE CSS FOR VISUAL STYLE
+# ----------------------------------------------------
+APP_CSS = """
+<style>
+    body {
+        background-color: #f4f6fb;
+    }
+    .main-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #12355b;
+        margin-bottom: 0.5rem;
+    }
+    .subtitle {
+        font-size: 1rem;
+        color: #4b5b70;
+        margin-bottom: 1.5rem;
+    }
+    .lab-card {
+        background-color: #ffffff;
+        border-radius: 14px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 12px rgba(18, 53, 91, 0.08);
+    }
+    .step-header {
+        font-weight: 600;
+        color: #12355b;
+        margin-bottom: 0.4rem;
+    }
+    .step-number {
+        background-color: #12355b;
+        color: #ffffff;
+        border-radius: 999px;
+        padding: 0.1rem 0.6rem;
+        font-size: 0.8rem;
+        margin-right: 0.4rem;
+    }
+    .small-note {
+        font-size: 0.85rem;
+        color: #6b7c90;
+    }
+</style>
+"""
 
-def header_block(title, subtitle, page_no):
-    st.markdown(f"### {title}")
-    st.caption(subtitle)
-    st.caption(f"Experiment {page_no}")
-
-def materials_block(items):
-    st.subheader("You will need")
-    for item in items:
-        st.markdown(f"- {item}")
-
-def steps_block(steps):
-    st.subheader("Procedure")
-    for i, step in enumerate(steps, start=1):
-        st.markdown(f"**Step {i}.** {step}")
-
-def explanation_block(text):
-    st.subheader("What is happening")
-    st.write(text)
-
-def reflection_block(questions):
-    st.subheader("Think and discuss")
-    for q in questions:
-        st.markdown(f"- {q}")
-    st.markdown("Did the activity work as expected?")
-    st.checkbox("Yes, it was successful", key=f"succ_{st.session_state.get('exp_key','')}")
-    st.checkbox("No, it did not work well", key=f"unsucc_{st.session_state.get('exp_key','')}")
+st.markdown(APP_CSS, unsafe_allow_html=True)
 
 
-# ---------- Experiment content ----------
+# ----------------------------------------------------
+# HELPER FUNCTIONS
+# ----------------------------------------------------
+def show_asset(path: str, caption: str | None = None):
+    """
+    Try to show an image or GIF.
+    If file is missing, show a gentle teacher note instead of error.
+    """
+    p = Path(path)
+    if p.exists():
+        img = Image.open(p)
+        st.image(img, caption=caption, use_column_width=True)
+    else:
+        st.info(
+            f"Teacher note: place a file at `{path}` to show this step visually. "
+            f"PNG, JPG or GIF are supported."
+        )
 
+
+def step_card(step_no: int, title: str, body: str):
+    """
+    Visual container for each step.
+    """
+    with st.container():
+        st.markdown('<div class="lab-card">', unsafe_allow_html=True)
+        st.markdown(
+            f'<span class="step-number">Step {step_no}</span>'
+            f'<span class="step-header">{title}</span>',
+            unsafe_allow_html=True,
+        )
+        st.write(body)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+def reflection_questions(questions: list[str], key_prefix: str):
+    """
+    Simple reflective questions at the end of each experiment.
+    Supports INEE style learning by reflection.
+    """
+    st.subheader("Reflection and learning")
+    for i, q in enumerate(questions, start=1):
+        st.markdown(f"**Q{i}. {q}**")
+        st.text_area(
+            "Your notes",
+            "",
+            key=f"{key_prefix}_q{i}",
+            placeholder="Write observations, group feedback or learner comments here.",
+        )
+
+
+# ----------------------------------------------------
+# EXPERIMENT 3
+# ----------------------------------------------------
 def experiment_3():
-    st.session_state["exp_key"] = "exp3"
-    header_block(
-        "Exploring Colors",
-        "How colored water changes the light that passes through it",
-        "03"
+    st.markdown('<div class="lab-card">', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Experiment 3 - Exploring Colours</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">How coloured water changes the light that passes through it</div>',
+        unsafe_allow_html=True,
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        materials_block(
-            [
-                "Transparent glass or clear plastic cups",
-                "Clean water",
-                "Food colouring (red, blue, green, etc.)",
-                "Flashlight or torch"
-            ]
-        )
+    # Virtual lab table: left materials, right live actions
+    col_left, col_right = st.columns([1, 2])
 
-    with col2:
-        st.subheader("Quick setup")
+    with col_left:
+        st.markdown('<div class="lab-card">', unsafe_allow_html=True)
+        st.subheader("Materials on the lab table")
         st.markdown(
             """
-            1. Fill each cup most of the way with water.  
-            2. Put a different food colour in each cup.  
-            3. Darken the room a little and get your torch ready.
+            - Transparent glasses or clear plastic cups  
+            - Clean water  
+            - Food colouring (red, blue, green, yellow)  
+            - Flashlight or torch  
             """
         )
+        st.markdown(
+            '<p class="small-note">These materials can usually be found in homes, temporary learning spaces or simple classroom settings.</p>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.divider()
+    with col_right:
+        tabs = st.tabs(["Prepare", "Do the experiment", "Observe", "Explain"])
 
-    steps_block(
+        with tabs[0]:
+            step_card(
+                1,
+                "Set up coloured water",
+                "Fill each glass with clean water. Add a different food colour to each glass and mix gently.",
+            )
+            show_asset("assets/images/exp03_setup.png", "Glasses with coloured water")
+
+        with tabs[1]:
+            step_card(
+                2,
+                "Shine the light",
+                "Darken the room slightly. Shine the torch through one glass at a time onto a wall or paper.",
+            )
+            show_asset("assets/gif/exp03_shine.gif", "Torch shining through coloured water")
+
+            colour = st.selectbox(
+                "Choose the colour of the water to simulate the beam",
+                ["Red", "Blue", "Green", "Yellow"],
+                key="exp3_colour",
+            )
+            intensity = st.slider(
+                "Adjust colour intensity",
+                min_value=1,
+                max_value=10,
+                value=5,
+                key="exp3_intensity",
+            )
+
+            if colour == "Red":
+                obs = "The beam looks more and more red as the colour intensity increases."
+            elif colour == "Blue":
+                obs = "The beam becomes deeper blue when the water is more coloured."
+            elif colour == "Green":
+                obs = "The beam gets a stronger green tone with higher intensity."
+            else:
+                obs = "The beam appears brighter yellow at medium intensity and darker at very high intensity."
+
+            st.success(obs + " This simulates what learners might see in the real activity.")
+
+        with tabs[2]:
+            step_card(
+                3,
+                "Observe the beam",
+                "Watch the colour of the beam on the wall or paper. Repeat with each colour and compare.",
+            )
+            show_asset("assets/images/exp03_observe.png", "Example of coloured beams on a wall")
+
+            mix_two = st.multiselect(
+                "Choose two colours to mix and imagine the result",
+                ["Red", "Blue", "Green", "Yellow"],
+                max_selections=2,
+                key="exp3_mix",
+            )
+            if len(mix_two) == 2:
+                st.info(
+                    f"Discuss with learners: What new colour might appear if {mix_two[0]} and {mix_two[1]} beams mix together"
+                )
+            else:
+                st.info("Select two colours to prompt a colour mixing discussion.")
+
+        with tabs[3]:
+            step_card(
+                4,
+                "What is happening",
+                "White light is made of many colours together. Coloured water keeps some parts of the light and lets other parts pass through. "
+                "The colour that reaches your eyes is the part that is not absorbed by the water.",
+            )
+            show_asset("assets/images/exp03_explain.png", "Simple diagram of light and coloured filters")
+
+    reflection_questions(
         [
-            "Pour water into the cups, leaving a little empty space at the top.",
-            "Add a few drops of a different food colouring into each cup and mix gently.",
-            "Turn on the torch and shine it through one coloured cup at a time.",
-            "Watch the colour of the beam on the table, wall or your hand."
-        ]
-    )
-
-    st.divider()
-
-    st.subheader("Try it on the screen")
-    colour = st.selectbox(
-        "Choose the colour of the water",
-        ["Red", "Blue", "Green", "Yellow"]
-    )
-
-    if colour == "Red":
-        observation = "The beam looks reddish because the water has removed much of the other colours from the white light."
-    elif colour == "Blue":
-        observation = "The beam looks bluish because most of the red and green parts of the light have been taken in by the water."
-    elif colour == "Green":
-        observation = "The beam has a green look because mainly green light is passing through to your eyes."
-    else:
-        observation = "The beam looks yellow because the water is letting the yellow part of the light pass more easily."
-
-    st.info(observation)
-
-    explanation_block(
-        "White light is made of many colours. The coloured water keeps (absorbs) some "
-        "parts of the light and lets other parts pass through. The colour you see is the "
-        "part of the light that was not absorbed by the water."
-    )
-
-    reflection_block(
-        [
-            "What changed when you added more food colouring to a cup",
-            "Which colour made the strongest beam",
-            "How could you mix colours to make a new colour of light"
-        ]
+            "Which colour of water gave the strongest visible beam",
+            "How could you adapt this experiment in a low light or high light classroom",
+            "How does this experiment support understanding of colour in daily life",
+        ],
+        key_prefix="exp3",
     )
 
 
+# ----------------------------------------------------
+# EXPERIMENT 4
+# ----------------------------------------------------
 def experiment_4():
-    st.session_state["exp_key"] = "exp4"
-    header_block(
-        "Refraction with Water and Pencil",
-        "Why objects can look bent under water",
-        "04"
+    st.markdown('<div class="lab-card">', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Experiment 4 - Refraction with Water and Pencil</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Why objects can look bent under water</div>',
+        unsafe_allow_html=True,
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        materials_block(
-            [
-                "Transparent glass",
-                "Clean water",
-                "Pencil, straw or stick"
-            ]
-        )
+    col_left, col_right = st.columns([1, 2])
 
-    with col2:
-        st.subheader("Quick setup")
+    with col_left:
+        st.markdown('<div class="lab-card">', unsafe_allow_html=True)
+        st.subheader("Materials on the lab table")
         st.markdown(
             """
-            1. Fill the glass with water.  
-            2. Put the pencil so that it is part in water and part in air.  
-            3. Look from the side of the glass.
+            - Transparent glass  
+            - Clean water  
+            - Pencil, straw or stick  
             """
         )
+        st.markdown(
+            '<p class="small-note">This experiment is suitable for temporary learning spaces and does not require electricity.</p>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.divider()
+    with col_right:
+        tabs = st.tabs(["Prepare", "Do the experiment", "Observe", "Explain"])
 
-    steps_block(
+        with tabs[0]:
+            step_card(
+                1,
+                "Prepare the glass",
+                "Fill the transparent glass with water, leaving a small space at the top.",
+            )
+            show_asset("assets/images/exp04_setup.png", "Glass partly filled with water")
+
+        with tabs[1]:
+            step_card(
+                2,
+                "Place the pencil",
+                "Place the pencil or straw so that part of it is under water and part is in the air.",
+            )
+            show_asset("assets/gif/exp04_place.gif", "Pencil placed in water")
+
+            angle = st.slider(
+                "Viewing angle (simulate moving your head)",
+                min_value=0,
+                max_value=90,
+                value=30,
+                step=5,
+                key="exp4_angle",
+            )
+            if angle < 20:
+                st.info("From almost above, the bending is less visible.")
+            elif angle < 60:
+                st.success("From the side, the pencil looks clearly bent at the surface of the water.")
+            else:
+                st.info("From a very low side angle, the bending effect seems stronger.")
+
+        with tabs[2]:
+            step_card(
+                3,
+                "Observe carefully",
+                "Ask learners to look at the place where the pencil enters the water. Invite them to describe what they see.",
+            )
+            show_asset("assets/images/exp04_observe.png", "Apparent bending of pencil in water")
+
+            clarity = st.selectbox(
+                "How clear is the water in your context",
+                ["Very clear", "Somewhat cloudy", "Quite cloudy"],
+                key="exp4_clarity",
+            )
+            if clarity == "Very clear":
+                st.info("With clear water, the bending effect is easy to see.")
+            elif clarity == "Somewhat cloudy":
+                st.info("With somewhat cloudy water, the effect is still visible but less sharp.")
+            else:
+                st.info("With very cloudy water, you may need a brighter background to see the effect well.")
+
+        with tabs[3]:
+            step_card(
+                4,
+                "What is happening",
+                "Light changes direction when it moves from air into water. This change of direction is called refraction. "
+                "The light that comes from the part of the pencil in water reaches your eyes from a different path than the light from the part in air. "
+                "Your brain joins these paths and the pencil seems bent.",
+            )
+            show_asset("assets/images/exp04_explain.png", "Simple refraction diagram")
+
+    reflection_questions(
         [
-            "Fill the glass almost to the top with water.",
-            "Place the pencil or straw so that it is standing or leaning in the glass, partly under the water.",
-            "Look carefully at the point where the pencil meets the water surface.",
-            "Move your head to different sides and heights and keep watching the pencil."
-        ]
-    )
-
-    st.divider()
-
-    st.subheader("Try it on the screen")
-    angle = st.slider(
-        "Imagine you are looking from different angles. Move the slider.",
-        min_value=0,
-        max_value=90,
-        value=30,
-        step=5
-    )
-    if angle < 30:
-        txt = "From almost straight above, the bending is hard to see."
-    elif angle < 60:
-        txt = "From the side, the pencil looks clearly bent where it enters the water."
-    else:
-        txt = "From a very low side angle, the bending looks even stronger."
-    st.info(txt)
-
-    explanation_block(
-        "Light changes direction when it moves from air into water. This change of direction "
-        "is called refraction. The light from the part of the pencil in water reaches your eyes "
-        "from a different path than the light from the part in air. Your brain joins these paths "
-        "together and the pencil seems to be broken or bent at the water surface."
-    )
-
-    reflection_block(
-        [
-            "What happens to the bending when you use a wider glass",
-            "Would the effect be stronger in oil or in water",
-            "Where do you see similar bending effects in daily life"
-        ]
+            "Where do learners see similar bending of light in their daily lives",
+            "How could this idea be linked to navigation, fishing or other local livelihoods",
+            "How might refraction be important in designing glasses or lenses",
+        ],
+        key_prefix="exp4",
     )
 
 
+# ----------------------------------------------------
+# EXPERIMENT 5
+# ----------------------------------------------------
 def experiment_5():
-    st.session_state["exp_key"] = "exp5"
-    header_block(
-        "Colourful Light Absorption",
-        "Exploring how different colours handle light",
-        "05"
+    st.markdown('<div class="lab-card">', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Experiment 5 - Colourful Light Absorption</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Exploring how different colours handle light</div>',
+        unsafe_allow_html=True,
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        materials_block(
-            [
-                "Pieces of paper, cloth or plastic in different colours",
-                "Scissors and tape",
-                "Flashlight or other light source",
-                "A darkened room or shaded corner"
-            ]
-        )
+    col_left, col_right = st.columns([1, 2])
 
-    with col2:
-        st.subheader("Quick setup")
+    with col_left:
+        st.markdown('<div class="lab-card">', unsafe_allow_html=True)
+        st.subheader("Materials on the lab table")
         st.markdown(
             """
-            1. Cut small pieces of different coloured materials.  
-            2. Darken the room slightly.  
-            3. Use the torch to shine light through or onto each piece.
+            - Pieces of paper, cloth or plastic in different colours  
+            - Flashlight or lamp  
+            - Scissors and tape  
             """
         )
+        st.markdown(
+            '<p class="small-note">This activity is useful when discussing safe shelter design and heat in hot climates.</p>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.divider()
+    with col_right:
+        tabs = st.tabs(["Prepare", "Do the experiment", "Observe", "Explain"])
 
-    steps_block(
+        with tabs[0]:
+            step_card(
+                1,
+                "Prepare coloured samples",
+                "Cut pieces of different coloured materials to similar sizes so they can be compared fairly.",
+            )
+            show_asset("assets/images/exp05_setup.png", "Different coloured materials prepared")
+
+        with tabs[1]:
+            step_card(
+                2,
+                "Shine light on each colour",
+                "Place one piece at a time under the torch or lamp. Keep the distance the same for each colour.",
+            )
+            show_asset("assets/gif/exp05_shine.gif", "Shining light on different coloured surfaces")
+
+            material = st.selectbox(
+                "Select a colour to simulate absorption",
+                ["Black", "White", "Red", "Blue"],
+                key="exp5_material",
+            )
+            time = st.slider(
+                "Time that light shines on the material (relative scale)",
+                min_value=1,
+                max_value=10,
+                value=3,
+                key="exp5_time",
+            )
+
+            if material == "Black":
+                msg = "Black materials absorb more light and often feel warmer after some time."
+            elif material == "White":
+                msg = "White materials reflect much of the light and usually feel less warm."
+            elif material == "Red":
+                msg = "Red materials absorb many colours and reflect mostly red light."
+            else:
+                msg = "Blue materials absorb many colours and reflect mostly blue light."
+
+            st.success(
+                msg + " At higher time values the warming effect in real life would usually be stronger."
+            )
+
+        with tabs[2]:
+            step_card(
+                3,
+                "Observe warmth and brightness",
+                "Ask learners to carefully touch the materials after shining the light for some time and describe differences.",
+            )
+            show_asset("assets/images/exp05_observe.png", "Comparing brightness and warmth")
+
+            context = st.selectbox(
+                "Context for discussion",
+                ["Clothing choices", "Roof material", "Tent material", "School wall paint"],
+                key="exp5_context",
+            )
+            st.info(
+                f"Facilitators can link findings to {context.lower()} to support practical decision making."
+            )
+
+        with tabs[3]:
+            step_card(
+                4,
+                "What is happening",
+                "Objects handle light in different ways. Some absorb most of the light and look dark. Others reflect most of the light and look bright. "
+                "A coloured object absorbs many colours from white light and reflects only a smaller range, which is the colour that the eyes see.",
+            )
+            show_asset("assets/images/exp05_explain.png", "Diagram of absorption and reflection")
+
+    reflection_questions(
         [
-            "Collect several materials of different colours and cut them into similar small pieces.",
-            "Create a darker space by closing curtains or switching off some lights.",
-            "Hold one piece at a time in front of the torch or place it on a flat surface and shine the light on it.",
-            "Notice how bright or dark the material looks and what happens to the light behind or around it."
-        ]
-    )
-
-    st.divider()
-
-    st.subheader("Try it on the screen")
-    material = st.selectbox(
-        "Choose a material colour",
-        ["Black material", "White material", "Red material", "Blue material"]
-    )
-
-    if material == "Black material":
-        obs = "The material looks very dark because it keeps almost all the light that hits it."
-    elif material == "White material":
-        obs = "The material looks bright because it sends back most of the light in many directions."
-    elif material == "Red material":
-        obs = "The material sends back mainly red light and keeps most of the other colours."
-    else:
-        obs = "The material sends back mostly blue light and keeps much of the rest."
-
-    st.info(obs)
-
-    explanation_block(
-        "Objects handle light in different ways. Some take in (absorb) most of the light and "
-        "look dark. Others send most of the light back and look bright. A coloured object keeps "
-        "many colours from white light and sends back only a smaller range, which is the colour "
-        "that your eyes see."
-    )
-
-    reflection_block(
-        [
-            "Which colours became warmer to touch after shining the torch for some time",
-            "How would these findings be useful when choosing clothes for a hot day",
-            "What might this mean for building materials in hot climates"
-        ]
+            "How could this experiment inform choices of shelter material in a hot climate",
+            "How might colour choices improve comfort in learning spaces",
+            "What local examples can learners identify where colour and heat are linked",
+        ],
+        key_prefix="exp5",
     )
 
 
+# ----------------------------------------------------
+# EXPERIMENT 6
+# ----------------------------------------------------
 def experiment_6():
-    st.session_state["exp_key"] = "exp6"
-    header_block(
-        "Ice Magnifying Glass",
-        "Using ice to make objects look bigger",
-        "06"
+    st.markdown('<div class="lab-card">', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Experiment 6 - Ice Magnifying Glass</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="subtitle">Using ice to make objects look bigger</div>',
+        unsafe_allow_html=True,
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        materials_block(
-            [
-                "Flat, clear piece of ice (cube or slab)",
-                "Small objects to observe such as leaves, insects, or toys",
-                "Tray or plate to hold the melting ice"
-            ]
-        )
+    col_left, col_right = st.columns([1, 2])
 
-    with col2:
-        st.subheader("Quick setup")
+    with col_left:
+        st.markdown('<div class="lab-card">', unsafe_allow_html=True)
+        st.subheader("Materials on the lab table")
         st.markdown(
             """
-            1. Prepare a flat, clear piece of ice.  
-            2. Place small objects on a tray.  
-            3. Hold the ice between your eye and the object.
+            - Flat, clear piece of ice (cube or slab)  
+            - Small objects (leaves, small text, small toys)  
+            - Tray or plate to hold the melting ice  
             """
         )
+        st.markdown(
+            '<p class="small-note">Adult supervision is recommended when preparing ice, especially with younger learners.</p>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.divider()
+    with col_right:
+        tabs = st.tabs(["Prepare", "Do the experiment", "Observe", "Explain"])
 
-    steps_block(
+        with tabs[0]:
+            step_card(
+                1,
+                "Prepare the ice and objects",
+                "Place the small objects on a flat surface. Prepare a clear piece of ice and place it on a tray.",
+            )
+            show_asset("assets/images/exp06_setup.png", "Ice piece and small objects")
+
+        with tabs[1]:
+            step_card(
+                2,
+                "Use the ice as a lens",
+                "Hold the ice between your eye and one object. Move the ice slowly nearer and farther from the object.",
+            )
+            show_asset("assets/gif/exp06_move.gif", "Moving the ice between object and eyes")
+
+            distance = st.slider(
+                "Simulated distance between ice and object",
+                min_value=1,
+                max_value=10,
+                value=5,
+                key="exp6_distance",
+            )
+            if distance <= 3:
+                st.info("Very close distance. The object may look larger but less clear.")
+            elif distance <= 7:
+                st.success("Medium distance. The object looks bigger and reasonably clear.")
+            else:
+                st.info("Larger distance. The magnifying effect becomes weaker.")
+
+        with tabs[2]:
+            step_card(
+                3,
+                "Observe changes",
+                "Ask learners to describe how the size and clarity of the object change as the ice moves.",
+            )
+            show_asset("assets/images/exp06_observe.png", "Object seen through ice")
+
+            melt = st.slider(
+                "Simulated melting level of ice",
+                min_value=0,
+                max_value=100,
+                value=20,
+                key="exp6_melt",
+            )
+            if melt < 30:
+                st.info("Ice is mostly solid. The magnification is more stable.")
+            elif melt < 70:
+                st.info("Ice is partly melted. Shapes may look distorted.")
+            else:
+                st.info("Ice is almost melted. The magnifying effect almost disappears.")
+
+        with tabs[3]:
+            step_card(
+                4,
+                "What is happening",
+                "When light passes through ice, it changes speed and direction. The curved surface of the ice can focus light, "
+                "similar to a simple magnifying glass. At certain distances the image appears larger to the eye.",
+            )
+            show_asset("assets/images/exp06_explain.png", "Concept of simple lens using ice")
+
+    reflection_questions(
         [
-            "Prepare or take a flat piece of clear ice. Ask an adult to support if needed.",
-            "Collect small items, for example leaves, printed letters or tiny toys, and place them on a surface.",
-            "Hold the ice carefully between your fingers and place it between your eye and one object.",
-            "Move the ice nearer or farther from the object and from your eye until the image looks large and clear."
-        ]
-    )
-
-    st.divider()
-
-    st.subheader("Try it on the screen")
-    distance = st.slider(
-        "Move the virtual ice closer or farther from the object",
-        min_value=1,
-        max_value=10,
-        value=5
-    )
-    if distance <= 3:
-        msg = "The ice is very close to the object. The image is large but may look blurry."
-    elif distance <= 7:
-        msg = "The distance is comfortable. The object looks bigger and fairly clear."
-    else:
-        msg = "The ice is far away. The magnifying effect is weaker."
-    st.info(msg)
-
-    explanation_block(
-        "When light travels through different materials such as air and ice, its speed and direction change. "
-        "The curved shape of the ice can bend and focus light, similar to a simple magnifying glass. "
-        "By changing the distance between the ice and the object, you find a position where the light forms a clear, enlarged image for your eye."
-    )
-
-    reflection_block(
-        [
-            "What happened as the ice started to melt",
-            "How is this similar to using a real magnifying glass",
-            "Where might people use similar ideas in daily tools or technology"
-        ]
+            "How is this similar to using a glass magnifier or spectacles",
+            "What challenges might teachers face when doing this in hot climates",
+            "How could this activity support children who enjoy practical science but have limited materials",
+        ],
+        key_prefix="exp6",
     )
 
 
-# ---------- Main layout ----------
-
-st.title("Light & Color - Virtual Experiment Lab")
-st.write(
-    "This small lab helps learners explore how light and colour behave using simple home materials. "
-    "Each activity is meant to support learning by doing."
+# ----------------------------------------------------
+# MAIN APP LAYOUT
+# ----------------------------------------------------
+st.markdown('<div class="main-title">Virtual Science Lab - Light and Color</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="subtitle">Interactive experiments designed for learning by doing in classroom and non classroom settings.</div>',
+    unsafe_allow_html=True,
 )
 
+st.sidebar.title("Experiment menu")
 exp_choice = st.sidebar.radio(
-    "Choose an experiment",
+    "Select an experiment",
     (
-        "03 - Exploring Colors",
-        "04 - Refraction with Water and Pencil",
-        "05 - Colourful Light Absorption",
-        "06 - Ice Magnifying Glass"
-    )
+        "Experiment 3 - Exploring Colours",
+        "Experiment 4 - Refraction with Water and Pencil",
+        "Experiment 5 - Colourful Light Absorption",
+        "Experiment 6 - Ice Magnifying Glass",
+    ),
 )
 
-if exp_choice.startswith("03"):
+st.sidebar.markdown("---")
+st.sidebar.markdown(
+    "Facilitator note: This virtual lab is designed to complement real hands on activities, "
+    "not to replace practical experiments where they are possible."
+)
+
+if exp_choice.startswith("Experiment 3"):
     experiment_3()
-elif exp_choice.startswith("04"):
+elif exp_choice.startswith("Experiment 4"):
     experiment_4()
-elif exp_choice.startswith("05"):
+elif exp_choice.startswith("Experiment 5"):
     experiment_5()
-else:
+elif exp_choice.startswith("Experiment 6"):
     experiment_6()
